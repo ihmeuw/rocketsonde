@@ -19,15 +19,15 @@ def basic_summarizer(records):
         assert all([set(o.keys()) == keys for o in process_observations])
         first_time, last_time = _measurement_period(process_observations)
 
-        sums = {k:0 for k in keys}
-        peaks = {k:process_observations[0][k] for k in keys}
+        sums = {k: 0 for k in keys}
+        peaks = {k: process_observations[0][k] for k in keys}
         for observation in process_observations:
             for k in keys:
                 sums[k] += observation[k]
                 if peaks[k] < observation[k]:
                     peaks[k] = observation[k]
-        result = {f"mean_{k}":v/len(process_observations) for k,v in sums.items()}
-        result.update({f"peak_{k}":v for k,v in peaks.items()})
+        result = {f"mean_{k}": v / len(process_observations) for k, v in sums.items()}
+        result.update({f"peak_{k}": v for k, v in peaks.items()})
 
         result["total_samples"] = len(process_observations)
         result["start_time"] = first_time

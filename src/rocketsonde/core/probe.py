@@ -73,7 +73,6 @@ class Probe:
                         pid, timestamp, record = self._worker.record_pipe.recv()
                         self._records[pid].append({**{"time": timestamp}, **record})
 
-
     def _panic_kill_monitor(self):
         """This should only trigger when the parent exits without properly
         cleaning up by calling stop_monitor. We don't collect any data in
@@ -81,7 +80,6 @@ class Probe:
         """
         if self._worker is not None:
             self._worker.process.kill()
-
 
     def stop_monitor(self, timeout=3):
         if self._worker is None:

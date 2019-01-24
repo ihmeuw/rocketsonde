@@ -1,6 +1,7 @@
 from time import time
 from multiprocessing import Process, Pipe, Event, Condition
 from collections import defaultdict
+import atexit
 
 
 class _Worker:
@@ -15,12 +16,12 @@ class _Worker:
 
 
 class Probe:
-    __slots__ = ["_records", "_process_data", "_worker", "_metric"]
+    __slots__ = ["_records", "_process_user_data", "_worker", "_metric"]
 
     def __init__(self, metric):
         self._metric = metric
         self._records = defaultdict(list)
-        self._process_data = {}
+        self._process_user_data = {}
         self._worker = None
 
     def attach_to_process(self, pid, data=None):
@@ -28,7 +29,7 @@ class Probe:
             raise ValueError("Cannot attach to process when not running")
 
         self._worker.pid_pipe.send(("add", pid))
-        self._process_data[pid] = data
+        self._process_user_data[pid] = data
 
     def detach_from_process(self, pid):
         if self._worker is None:
@@ -51,7 +52,10 @@ class Probe:
             target=_monitor,
             args=(self._metric, remote_pid_pipe, remote_record_pipe, dump_records_condition, shutdown_event),
         )
+
         process.start()
+        atexit.register(self._panic_kill_monitor)
+
         self._worker = _Worker(
             shutdown_event=shutdown_event,
             pid_pipe=pid_pipe,
@@ -66,8 +70,18 @@ class Probe:
                 self._worker.dump_records_condition.notify()
                 if self._worker.dump_records_condition.wait(3):
                     while self._worker.record_pipe.poll():
-                        pid, record = self._worker.record_pipe.recv()
-                        self._records[pid].append(record)
+                        pid, timestamp, record = self._worker.record_pipe.recv()
+                        self._records[pid].append({**{"time": timestamp}, **record})
+
+
+    def _panic_kill_monitor(self):
+        """This should only trigger when the parent exits without properly
+        cleaning up by calling stop_monitor. We don't collect any data in
+        this case, just make sure the child process get's killed.
+        """
+        if self._worker is not None:
+            self._worker.process.kill()
+
 
     def stop_monitor(self, timeout=3):
         if self._worker is None:
@@ -81,6 +95,7 @@ class Probe:
             # EOFError indicates that the record pipe is empty and the child has stopped, which is fine
             pass
         self._worker.process.join(timeout)
+        atexit.unregister(self._panic_kill_monitor)
 
         if self._worker.process.exitcode is None:
             self._worker.process.kill()
@@ -111,7 +126,7 @@ def _monitor(metric_func, pid_pipe, record_pipe, dump_records_condition, shutdow
                 if record is None:
                     dead_pids.add(pid)
                 else:
-                    records.append((pid, record))
+                    records.append((pid, time(), record))
             pids = pids.difference(dead_pids)
 
         with dump_records_condition:

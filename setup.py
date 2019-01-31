@@ -8,7 +8,7 @@ setup(
     setup_requires=["setuptools_scm"],
     install_requires=["psutil"],
     extras_require={"testing": ["pytest"]},
-    entry_points={"console_scripts": []},
+    entry_points={"console_scripts": ["rsonde=rocketsonde.executable.rsonde:main"]},
     zip_safe=False,
     classifiers=[
         "Intended Audience :: Developers",

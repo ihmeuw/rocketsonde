@@ -21,7 +21,7 @@ class Probe:
     def __init__(self, metric):
         self._metric = metric
         self._records = defaultdict(list)
-        self._process_user_data = {}
+        self._process_user_data = defaultdict(None)
         self._worker = None
 
     def attach_to_process(self, pid, data=None):
@@ -42,6 +42,14 @@ class Probe:
         if self._worker is not None:
             self._drain_record_pipe()
         return dict(self._records)
+
+    def user_data(self, pid):
+        return self._process_user_data[pid]
+
+    def probe_pid(self):
+        if self._worker is None:
+            raise ValueError("Worker is not running")
+        return self._worker.process.pid
 
     def start_monitor(self):
         remote_pid_pipe, pid_pipe = Pipe(False)

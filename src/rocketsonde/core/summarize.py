@@ -14,9 +14,10 @@ def _measurement_period(observations):
 
 def basic_summarizer(records):
     results = {}
-    for process, process_observations in records.items():
+    for process_key, process_observations in records.items():
         keys = set(process_observations[0].keys())
         assert all([set(o.keys()) == keys for o in process_observations])
+        keys -= {"time"}
         first_time, last_time = _measurement_period(process_observations)
 
         sums = {k: 0 for k in keys}
@@ -33,5 +34,5 @@ def basic_summarizer(records):
         result["start_time"] = first_time
         result["end_time"] = last_time
 
-        results[process] = result
+        results[process_key] = result
     return results

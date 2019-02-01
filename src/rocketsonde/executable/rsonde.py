@@ -35,6 +35,8 @@ def main():
         sleep(0.25)
         exit_code = root_child.poll()
 
+    monitor.stop_monitor()
+
     observations = monitor.records
     summaries = basic_summarizer(observations)
     try:

@@ -7,7 +7,7 @@ setup(
     use_scm_version=True,
     setup_requires=["setuptools_scm"],
     install_requires=["psutil"],
-    extras_require={"testing": ["pytest"]},
+    extras_require={"testing": ["pytest", "pytest-mock"]},
     entry_points={"console_scripts": ["rsonde=rocketsonde.executable.rsonde:main"]},
     zip_safe=False,
     classifiers=[
